@@ -3,21 +3,39 @@ from flask import Flask, render_template
 import requests
 import json
 import secrets_example
-import plotly
 import sys
+import datetime
 
 app = Flask(__name__)
 
 
 @app.route('/user/<nm>')
-def hello_name(nm):
-    Articles = search(5)
-    return render_template('user.html', name=nm, my_list=Articles)
+def tech_section(nm):
+    Articles = search("technology",5)
+    t = get_time()
+    return render_template('user.html', name=nm, time = t, section ="technology", my_list=Articles)
+
+@app.route('/user/<nm>/<queries>')
+def other_section(nm, queries):
+    Articles = search(str(queries),5)
+    t = get_time()
+    return render_template('user.html', name=nm,time = t, section =str(queries), my_list=Articles)
 
 @app.route('/')
 def index():
     return '<h1>Welcome!</h1>'
 
+def get_time():
+    t = datetime.datetime.now()
+    if t.hour < 12:
+        time = "morning"
+    elif t.hour < 16:
+        time = "afternoon"
+    elif t.hour < 20:
+        time = "evening"
+    else:
+        time = "night"
+    return time
 class Media:
 
     def __init__(self, title="No Title",url=None,json=None):
@@ -37,8 +55,11 @@ class Media:
     def __len__(self):
         return 0
 
-def get_data():
-    base_url = "https://api.nytimes.com/svc/topstories/v2/technology.json"
+def get_data(queries):
+    # if queries is None:
+    #     queries = "technology"
+    base_url = "https://api.nytimes.com/svc/topstories/v2/{}.json".format(queries)
+               # "https://api.nytimes.com/svc/topstories/v2/home.json"
     api_key = secrets_example.api_key
     articles_url = base_url + "?api-key={}".format(api_key)
     return json.loads(requests.get(articles_url).text)
@@ -50,8 +71,8 @@ def parsing(data):
         collections.append(Media(json=item))
     return collections
 
-def search(range):
-    data = get_data()
+def search(queries, range):
+    data = get_data(queries)
     results = parsing(data)
     return results[0:range]
 
@@ -70,6 +91,7 @@ def print_results(results):
 
 
 if __name__ == '__main__':
-    results = search(5)
-    list = print_results(results)
+
+    # results = search(queries,5)
+    # list = print_results(results)
     app.run(debug=True)
